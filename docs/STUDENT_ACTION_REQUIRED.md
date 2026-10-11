@@ -25,7 +25,7 @@ To enable live Firebase Authentication on your deployment:
      ```env
      FIREBASE_PROJECT_ID=your-project-id
      FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
-     FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+     FIREBASE_PRIVATE_KEY=replace_with_your_firebase_private_key
      ```
    - **Method 2 (Local file):**
      ```env
