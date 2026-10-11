@@ -196,7 +196,7 @@ careerlink/
    PORT=5001
    NODE_ENV=development
    MONGODB_URI=mongodb://localhost:27017/careerlink
-   JWT_SECRET=careerlink_jwt_secret_key_change_in_production_2025
+   JWT_SECRET=replace_with_a_unique_random_secret_before_deployment
    JWT_EXPIRES_IN=7d
    CORS_ORIGIN=http://localhost:5173
    RATE_LIMIT_WINDOW_MS=900000

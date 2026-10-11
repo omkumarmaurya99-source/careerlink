@@ -59,7 +59,7 @@ For local development and testing, your local MongoDB server is already active a
 5. Click **Connect > Drivers (Node.js)** and copy the connection string.
 6. Replace `MONGODB_URI` in `backend/.env` or in your cloud deployment environment variables:
    ```env
-   MONGODB_URI=mongodb+srv://om_maurya:<password>@cluster0.xxxxx.mongodb.net/careerlink?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/careerlink
    ```
 
 ---
