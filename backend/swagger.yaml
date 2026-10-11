@@ -1,0 +1,900 @@
+openapi: 3.0.3
+info:
+  title: CareerLink - Job Portal API
+  description: |
+    CareerLink is a comprehensive job portal backend API built with Node.js, Express.js, MongoDB, and Firebase.
+    
+    ## Features
+    - User Authentication (Firebase + JWT)
+    - Role-Based Access Control (Recruiter / Jobseeker)
+    - Job CRUD Operations
+    - Job Search with Filters
+    - Application Management
+    - Resume Upload & Parsing
+    - Skill-Based Job Recommendations
+    
+    ## Authentication
+    All protected endpoints require a Bearer JWT token in the Authorization header.
+    
+    **Student:** Om Maurya (Roll No: 150096725208)
+    **College:** ITM Skills University
+  version: 1.0.0
+  contact:
+    name: Om Maurya
+    email: om.maurya@student.itm.edu
+
+servers:
+  - url: http://localhost:5001
+    description: Local Development Server (macOS default)
+  - url: http://localhost:5000
+    description: Docker / Production API Server
+
+tags:
+  - name: Health
+    description: Server health check
+  - name: Auth
+    description: Authentication - Register, Login, Profile
+  - name: Jobs
+    description: Job CRUD operations and search
+  - name: Applications
+    description: Job application management
+  - name: Resume
+    description: Resume upload and parsing
+  - name: Recommendations
+    description: Skill-based job recommendations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from login/register response
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "6507f1f77bcf86cd799439011"
+        name:
+          type: string
+          example: "Om Maurya"
+        email:
+          type: string
+          example: "om@example.com"
+        role:
+          type: string
+          enum: [recruiter, jobseeker]
+        skills:
+          type: array
+          items:
+            type: string
+          example: ["javascript", "node.js", "mongodb"]
+        resume:
+          type: string
+          nullable: true
+        profilePhoto:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        bio:
+          type: string
+        location:
+          type: string
+        company:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Job:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+          example: "Backend Developer"
+        company:
+          type: string
+          example: "TechCorp India"
+        description:
+          type: string
+          example: "We are looking for a skilled Backend Developer..."
+        location:
+          type: string
+          example: "Mumbai, India"
+        salary:
+          type: string
+          example: "8-12 LPA"
+        skills:
+          type: array
+          items:
+            type: string
+          example: ["node.js", "express", "mongodb"]
+        recruiter:
+          $ref: '#/components/schemas/User'
+        status:
+          type: string
+          enum: [active, closed]
+        jobType:
+          type: string
+          enum: [full-time, part-time, internship, contract, remote]
+        experienceLevel:
+          type: string
+          enum: [fresher, junior, mid, senior, lead]
+        applicationCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Application:
+      type: object
+      properties:
+        _id:
+          type: string
+        job:
+          $ref: '#/components/schemas/Job'
+        applicant:
+          $ref: '#/components/schemas/User'
+        resume:
+          type: string
+          nullable: true
+        coverLetter:
+          type: string
+        status:
+          type: string
+          enum: [applied, shortlisted, rejected, selected]
+        appliedAt:
+          type: string
+          format: date-time
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            currentPage:
+              type: integer
+            totalPages:
+              type: integer
+            totalItems:
+              type: integer
+            itemsPerPage:
+              type: integer
+            hasNextPage:
+              type: boolean
+            hasPrevPage:
+              type: boolean
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Server Health Check
+      description: Returns server status, uptime, and memory usage
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "CareerLink API is running"
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "OK"
+                      timestamp:
+                        type: string
+                      uptime:
+                        type: string
+                      environment:
+                        type: string
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Create a new user account (jobseeker or recruiter)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name:
+                  type: string
+                  example: "Om Maurya"
+                email:
+                  type: string
+                  example: "om@example.com"
+                password:
+                  type: string
+                  example: "securePassword123"
+                role:
+                  type: string
+                  enum: [recruiter, jobseeker]
+                  example: "jobseeker"
+                phone:
+                  type: string
+                  example: "+919876543210"
+                company:
+                  type: string
+                  example: "TechCorp"
+                skills:
+                  type: array
+                  items:
+                    type: string
+                  example: ["javascript", "node.js"]
+                firebaseToken:
+                  type: string
+                  description: Firebase ID token (optional in dev mode)
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      description: Authenticate user and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: "om@example.com"
+                password:
+                  type: string
+                  example: "securePassword123"
+                firebaseToken:
+                  type: string
+                  description: Firebase ID token (optional in dev mode)
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/firebase-login:
+    post:
+      tags: [Auth]
+      summary: Authenticate with Firebase ID Token
+      description: Verifies client-side Firebase ID token via Firebase Admin SDK, auto-provisions or syncs user in MongoDB, and returns CareerLink JWT.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firebaseToken:
+                  type: string
+                  description: Firebase ID Token obtained from client SDK
+                role:
+                  type: string
+                  enum: [recruiter, jobseeker]
+                  default: jobseeker
+                name:
+                  type: string
+                  example: "Rahul Sharma"
+      responses:
+        '200':
+          description: Firebase authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Invalid or expired Firebase ID token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/profile:
+    get:
+      tags: [Auth]
+      summary: Get user profile
+      description: Get the authenticated user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+    put:
+      tags: [Auth]
+      summary: Update user profile
+      description: Update the authenticated user's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                bio:
+                  type: string
+                location:
+                  type: string
+                company:
+                  type: string
+                skills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Profile updated successfully
+        '401':
+          description: Unauthorized
+
+  /api/jobs:
+    get:
+      tags: [Jobs]
+      summary: Get all jobs
+      description: Fetch all active jobs with pagination and filters
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, closed]
+        - in: query
+          name: location
+          schema:
+            type: string
+        - in: query
+          name: jobType
+          schema:
+            type: string
+            enum: [full-time, part-time, internship, contract, remote]
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, salary, title]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Jobs fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Jobs]
+      summary: Create a new job
+      description: Create a new job posting (recruiter only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, company, description, location, skills]
+              properties:
+                title:
+                  type: string
+                  example: "Backend Developer"
+                company:
+                  type: string
+                  example: "TechCorp India"
+                description:
+                  type: string
+                  example: "We are looking for a skilled Backend Developer with experience in Node.js and MongoDB..."
+                location:
+                  type: string
+                  example: "Mumbai, India"
+                salary:
+                  type: string
+                  example: "8-12 LPA"
+                skills:
+                  type: array
+                  items:
+                    type: string
+                  example: ["node.js", "express", "mongodb", "javascript"]
+                jobType:
+                  type: string
+                  enum: [full-time, part-time, internship, contract, remote]
+                experienceLevel:
+                  type: string
+                  enum: [fresher, junior, mid, senior, lead]
+                deadline:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Job created successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Recruiter role required
+        '422':
+          description: Validation error
+
+  /api/jobs/search:
+    get:
+      tags: [Jobs]
+      summary: Search jobs
+      description: Search jobs by keyword across title, description, company, and skills
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search keyword
+          example: "backend-developer"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: location
+          schema:
+            type: string
+        - in: query
+          name: jobType
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /api/jobs/recruiter/my-jobs:
+    get:
+      tags: [Jobs]
+      summary: Get recruiter's posted jobs
+      description: Get all jobs posted by the authenticated recruiter
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recruiter jobs fetched
+        '401':
+          description: Unauthorized
+        '403':
+          description: Recruiter role required
+
+  /api/jobs/{id}:
+    get:
+      tags: [Jobs]
+      summary: Get job by ID
+      description: Get detailed information about a specific job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: MongoDB ObjectId of the job
+      responses:
+        '200':
+          description: Job details
+        '404':
+          description: Job not found
+
+    put:
+      tags: [Jobs]
+      summary: Update a job
+      description: Update a job posting (recruiter who created it only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                company:
+                  type: string
+                description:
+                  type: string
+                location:
+                  type: string
+                salary:
+                  type: string
+                skills:
+                  type: array
+                  items:
+                    type: string
+                status:
+                  type: string
+                  enum: [active, closed]
+      responses:
+        '200':
+          description: Job updated
+        '403':
+          description: Not your job posting
+        '404':
+          description: Job not found
+
+    delete:
+      tags: [Jobs]
+      summary: Delete a job
+      description: Delete a job posting and its applications (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job deleted
+        '403':
+          description: Not your job posting
+        '404':
+          description: Job not found
+
+  /api/applications:
+    post:
+      tags: [Applications]
+      summary: Apply for a job
+      description: Submit a job application (jobseeker only). Optional resume file upload.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [jobId]
+              properties:
+                jobId:
+                  type: string
+                  description: MongoDB ObjectId of the job
+                coverLetter:
+                  type: string
+                resume:
+                  type: string
+                  format: binary
+                  description: Resume file (PDF, DOC, DOCX)
+      responses:
+        '201':
+          description: Application submitted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Jobseeker role required
+        '409':
+          description: Already applied
+
+  /api/applications/user/{id}:
+    get:
+      tags: [Applications]
+      summary: Get user's applications
+      description: Get all applications submitted by a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [applied, shortlisted, rejected, selected]
+      responses:
+        '200':
+          description: Applications fetched
+        '401':
+          description: Unauthorized
+
+  /api/applications/{id}/status:
+    put:
+      tags: [Applications]
+      summary: Update application status
+      description: Update the status of a job application (recruiter who owns the job only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [applied, shortlisted, rejected, selected]
+      responses:
+        '200':
+          description: Status updated
+        '403':
+          description: Not your job posting
+        '404':
+          description: Application not found
+
+  /api/applications/job/{jobId}:
+    get:
+      tags: [Applications]
+      summary: Get job applications
+      description: Get all applications for a specific job (recruiter who owns the job only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [applied, shortlisted, rejected, selected]
+      responses:
+        '200':
+          description: Applications fetched
+        '403':
+          description: Not your job
+
+  /api/resume/upload:
+    post:
+      tags: [Resume]
+      summary: Upload and parse resume
+      description: Upload a resume file (PDF, DOC, DOCX) and extract information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resume:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Resume uploaded and parsed
+        '400':
+          description: Invalid file type or no file
+
+  /api/resume/parsed:
+    get:
+      tags: [Resume]
+      summary: Get parsed resume data
+      description: Get the parsed information from the user's uploaded resume
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Parsed resume data
+        '404':
+          description: No resume uploaded
+
+  /api/recommendations:
+    get:
+      tags: [Recommendations]
+      summary: Get job recommendations
+      description: Get skill-based job recommendations for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recommendations generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      recommendations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            job:
+                              $ref: '#/components/schemas/Job'
+                            matchedSkills:
+                              type: array
+                              items:
+                                type: string
+                            missingSkills:
+                              type: array
+                              items:
+                                type: string
+                            matchPercentage:
+                              type: integer
+                            explanation:
+                              type: string
+                      userSkills:
+                        type: array
+                        items:
+                          type: string
+                      algorithm:
+                        type: string
+                      algorithmDescription:
+                        type: string

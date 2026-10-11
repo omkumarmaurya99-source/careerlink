@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Service account keys
+*service-account*.json
+firebase.json
+src/config/firebase.json
+*.pem
+*.key
+
+# Uploads & Logs
+uploads/*
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+*.log
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
