@@ -50,15 +50,13 @@ const logger = winston.createLogger({
   ],
 });
 
-// Development mein console mein bhi logs dikhao
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: logFormat,
-      level: 'debug',
-    })
-  );
-}
+// Always show logs in the console, including on Render
+logger.add(
+  new winston.transports.Console({
+    format: logFormat,
+    level: 'debug',
+  })
+);
 
 // Morgan ke liye stream - HTTP request logs Winston se handle honge
 logger.stream = {
